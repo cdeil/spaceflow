@@ -105,9 +105,18 @@ function addPlayer(name, totalScore = 0, highScore = 0) {
   GameState.players.push({ name, totalScore, highScore: highScore || totalScore });
 }
 
-// Run tests after DOMContentLoaded so game init and loadPlayers have run
+// Wait for real Phaser scene systems so rendering helpers can be tested.
 window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(runTests, 0);
+  const started = performance.now();
+  const waitForScene = () => {
+    const scene = phaserGame?.scene.getScene('Menu');
+    if (scene?.sys.displayList || performance.now() - started > 5000) {
+      runTests();
+    } else {
+      requestAnimationFrame(waitForScene);
+    }
+  };
+  waitForScene();
 });
 
 function runTests() {
@@ -115,6 +124,22 @@ function runTests() {
 // ═════════════════════════════════════════════════════════════════════
 // TESTS
 // ═════════════════════════════════════════════════════════════════════
+
+section('shared.js — Phaser text rendering');
+test('makeText creates sharp text with the bundled Phaser version', () => {
+  const scene = phaserGame.scene.getScene('Menu');
+  assert(scene?.sys.displayList, 'Menu scene did not initialize');
+  const text = makeText(scene, 10.25, 20.75, 'Rendering regression');
+  try {
+    assert(text instanceof Phaser.GameObjects.Text);
+    assertEqual(text.text, 'Rendering regression');
+    assertEqual(text.x, 10);
+    assertEqual(text.y, 21);
+    assertEqual(text.style.resolution, Math.max(1, window.devicePixelRatio || 1));
+  } finally {
+    text.destroy();
+  }
+});
 
 // ─── shared.js — rectsOverlap & col ───────────────────────────────────
 section('shared.js — rectsOverlap');

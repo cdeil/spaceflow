@@ -54,7 +54,6 @@ function makeText(scene, x, y, str, extra) {
     ...extra,
   });
   text.setResolution(resolution);
-  text.setRoundPixels(true);
   return text;
 }
 
